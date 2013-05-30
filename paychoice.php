@@ -413,8 +413,8 @@ class plgVmpaymentPaychoice extends vmPSPlugin
 			'order_total'=>$order['details']['BT']->order_total, //WE need the $order_total in cents!
 		);
 
-		$response = $this->_doPayment($method,$params);
-		$html = $this->_handleResponse($response, $order, $dbValues['payment_name']);
+		/*$response = */$this->_doPayment($method,$params);
+		//$html = $this->_handleResponse($response, $order, $dbValues['payment_name']);
 
 		if ($this->error)
 		{
@@ -434,7 +434,7 @@ class plgVmpaymentPaychoice extends vmPSPlugin
 		return $this->processConfirmedOrderPaymentResponse(1, $cart, $order, $html,$dbValues['payment_name'], $new_status);
 	}
 
-	function _handleResponse($response, $order, $payment_name)
+	/*function _handleResponse($response, $order, $payment_name)
 	{
 		$virtuemart_order_id = VirtueMartModelOrders::getOrderIdByOrderNumber($response->order_number);
 		if (!$virtuemart_order_id)
@@ -510,7 +510,7 @@ class plgVmpaymentPaychoice extends vmPSPlugin
 		$html .= '</table>' . "\n";
 		$this->logInfo('Order Number' . $response->order_number . ' payment approved', 'message');
 		return $html;
-	}
+	}*/
 
 	function plgVmGetPaymentCurrency($virtuemart_paymentmethod_id, &$paymentCurrencyId)
 	{
@@ -601,8 +601,8 @@ class plgVmpaymentPaychoice extends vmPSPlugin
 	function plgVmDeclarePluginParamsPayment($name, $id, &$data) { return $this->declarePluginParams('payment', $name, $id, $data); }
 	function plgVmSetOnTablePluginParamsPayment($name, $id, &$table) { return $this->setOnTablePluginParams($name, $id, $table); }
 
-	function _doPayment($method,$params) {
-
+	function _doPayment($method,$params)
+	{
 		//Instantiate the paychoice http client
 		$paychoiceClient = new PaychoiceProxy();
 
@@ -635,6 +635,7 @@ class plgVmpaymentPaychoice extends vmPSPlugin
 				$errorMessage = "Transaction Error. Payment processor declined transaction: {$response->charge->error_code} {$response->charge->error}";
 			}
 		}
+		
 		catch (PaychoiceException $e)
 		{
 			$errorMessage = $e->getMessage();
@@ -645,53 +646,8 @@ class plgVmpaymentPaychoice extends vmPSPlugin
 		{
 
 		}
-
-		//Check whether the curl_exec worked.
-		if( curl_errno( $ch ) == CURLE_OK ) {
-
-			//Parse the XML response
-			xml_parse($this->parser, $xmlResponse, TRUE);
-
-			$rtn = null;
-			if( xml_get_error_code( $this->parser ) == XML_ERROR_NONE ) {
-				//Get the result into local variables.
-				$rtn->paychoiceTrxnStatus = $this->xmlData['paychoiceTrxnStatus'];
-				$rtn->response = $rtn->paychoiceTrxnStatus=='True' ? 'accepted' : 'declined';
-				$rtn->paychoiceTrxnNumber = $this->xmlData['paychoiceTrxnNumber'];
-				$rtn->paychoiceTrxnReference = $this->xmlData['paychoiceTrxnReference'];
-				//$rtn->paychoiceAuthCode = $this->xmlData['paychoiceAuthCode'];
-				$rtn->paychoiceReturnAmount = $this->xmlData['paychoiceReturnAmount']/100;
-				$rtn->order_number = $this->xmlData['paychoiceTrxnOption1'];
-				$rtn->paychoiceTrxnError = $this->xmlData['paychoiceTrxnError'];
-				$rtn->raw = json_encode($this->xmlData);
-				$rtn->error = 0;
-				$rtn->errormsg = '';
-			} else {
-				//An XML error occured. Return the error message and number.
-				$rtn->response = 'error';
-				$rtn->error = xml_get_error_code( $this->parser ) + 2000;
-				$rtn->errormsg = xml_error_string( $rtn->error );
-			}
-			//Clean up our XML parser
-			xml_parser_free( $this->parser );
-		} else {
-			//A CURL Error occured. Return the error message and number. (offset so we can pick the error apart)
-			$rtn->response = 'error';
-			$rtn->error = curl_errno( $ch ) + 1000;
-			$rtn->errormsg = curl_error( $ch );
-		}
-
-		//Clean up CURL, and return any error.
-		curl_close( $ch );
-		return $rtn;
-	}
-
-	/***********************************************************************
-	 *** XML Parser - Callback functions								 ***
-	 ***********************************************************************/
-	function epXmlElementStart ($parser, $tag, $attributes) {  $this->currentTag = $tag; }
-	function epXmlElementEnd ($parser, $tag) { $this->currentTag = ""; }
-	function epXmlData ($parser, $cdata) { $this->xmlData[$this->currentTag] = $cdata; }
+				
+		return $response;
 }
 
 class PaychoiceProxy
@@ -750,7 +706,9 @@ class PaychoiceProxy
 		{
 			throw new PaychoiceException("Could not successfully communicate with payment processor. HTTP response code {$responseCode}.");
 		}
-
+		//var_dump($responseObject);
+		flush;
+		die;
 		return $responseObject;
 	}
 
